@@ -1,126 +1,65 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using Unity.Netcode;
 using ClientSideLogic;
+using System.Threading.Tasks;
 
-public class GameNetCoordinator : NetworkBehaviour
+namespace ServerSideLogic
 {
-    /// <summary>
-    /// only coordinator for all lobbies at this server
-    /// </summary>
-    public static GameNetCoordinator Singleton;
-    public List<Game> RunnedGames;
-
-    public float UnitSyncInterval = 0.3f;
-
-    public GameObject prefab_GameLobby;
-
-    private float timer_UnitSync = 0;
-    private bool IsInitialized = false;
-
-
-    private void Awake()
+    public class GameNetCoordinator : NetworkBehaviour
     {
-        TypesData.LoadAllTypes(PrefabManager.Singleton.prefabs_Units, PrefabManager.Singleton.prefabs_Buildings, PrefabManager.Singleton.prefabs_Trees);
-    }
-    private void Start()
-    {
-        
-    }
-    private void Update()
-    {
-        if (IsServer)
+        /// <summary>
+        /// there is only one coordinator for all lobbies at this server
+        /// </summary>
+        public static GameNetCoordinator Singleton;
+        public UnitSynchronizator unitSynchronizator;
+        public StatesSynchronizator statesSynchronizator;
+        public float LobbiesSyncInterval = 3f;
+
+
+        private bool IsInitialized = false;
+
+        private void Update()
         {
-            UnitSynchronization();
-        }
-    }
-
-    public void Init()
-    {
-        if (IsInitialized == false)
-        {
-            IsInitialized = true;
-        }
-        else
-        {
-            return;
-        }
-        Singleton = this;
-        LobbyManager.LobbyManagerInit();
-        LobbyManager.CreateMainLobby();
-        ScenariosManager.TestingScenarioStart();
-
-    }
-
-    private void UnitSynchronization()
-    {
-        if (timer_UnitSync > UnitSyncInterval)
-        {
-            timer_UnitSync = 0;
-            foreach (var Lobby in LobbyManager.Lobbies)
+            if (IsServer)
             {
-                if (Lobby.IsStarted)
-                {
-                    SyncUnitList(Lobby.GameRunningInLobby.unitsController.AllUnits);
-                }
+
             }
         }
-        else
-        {
-            timer_UnitSync += Time.deltaTime;
-        }
-    }
-    public Game CreateNewGame(short GameLobbyID)
-    {
-        Game NewGame = Instantiate(prefab_GameLobby).GetComponent<Game>();
-        NewGame.gameObject.name = "Game " + GameLobbyID;
-        RunnedGames.Add(NewGame);
-        NewGame.InitializeGame();
-        return NewGame;
-    }
-    public Game GetGameByID(sbyte IDOfGame)
-    {
-        return RunnedGames[IDOfGame];
-    }
 
-    private void SyncUnitList(List<Unit> UnitsToSync)
-    {
-        foreach (var Unit in UnitsToSync)
+        public void InitServer()
         {
-            if (Unit != null)
+
+            if (IsInitialized == false)
             {
-                SyncUnitClientRpc(new Unit.UnitSerializableData(Unit));
+                IsInitialized = true;
+                Singleton = this;
+                LobbyManager.StartLobbiesSynchronizationProcess(1000);
+            }
+            else
+            {
+                return;
             }
         }
-    }
-    [ClientRpc]
-    public void SyncUnitClientRpc(Unit.UnitSerializableData data)
-    {
-        if (ClientUnitController.UnitExistInClient(data.UnitObjectID))
+
+
+        public Game CreateNewGame(short GameLobbyID)
         {
-            UnitClientSide ClientSideUnit = ClientUnitController.FindUnitByID(data.UnitObjectID);
-            ClientSideUnit.ApplyRecievedData(data);
-        }
-        else
-        { //create client side unit representation
-            ClientUnitController.CreateUnitRepresentation(data);
+            Game NewGame = Game.SetupNewGame(PrefabManager.Singleton.prefab_GameLobby);
+            NewGame.gameObject.name = "Game " + GameLobbyID;
+            return NewGame;
         }
 
-    }
-    [ClientRpc]
-    public void SyncStateClientRpc(State.StateSerializableData data)
-    {
-        if (ClientStateController.StateExistInClient(data.StateID))
+        [ClientRpc]
+        public void SendLobbiesClientRpc(Matchmaking.GameLobby.LobbyData[] lobbies)
         {
-            StateClientSide ClientSideState = ClientStateController.States[data.StateID];
-            data.Apply(ClientSideState);
+            ClientSideLogic.UI.UILobbyManager.VisualizeLobbiesList(lobbies);
         }
-        else
-        { //create client side unit representation
-            ClientStateController.CreateClientStateRepresentation(data);
+        private void OnApplicationQuit()
+        {
+            LobbyManager.KillAllGames();
         }
-
     }
-
 }

@@ -1,49 +1,54 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class Fighting
+namespace ServerSideLogic.Behaviors
 {
-    public Unit CurrentTarget;
-
-    private Unit unit;
-    private float timer_Hitting = 0;
-
-    public Fighting(Unit unit)
+    public class Fighting
     {
-        this.unit = unit;
-        unit.unitcontrolling += FightingControlling;
-    }
-    private void FightingControlling()
-    {
-        if (CurrentTarget != null)
+        public Unit CurrentTarget;
+        public bool IsHitting = false;
+
+        private Unit OwnerUnit;
+        private float timer_Hitting = 0;
+
+        public Fighting(Unit unit)
         {
-            Hit(CurrentTarget);
+            this.OwnerUnit = unit;
         }
-    }
-
-    private void Hit(Unit target)
-    {
-        if (Vector3.Distance(unit.position, target.position) < unit.AttackRange)
+        public void FightingControlling(int TimePassed)
         {
-            if (timer_Hitting > unit.AttackDelay)
+            if (CurrentTarget != null)
             {
-                timer_Hitting = 0;
-                target.CurrentHP -= unit.Damage;
-                if (target.CurrentHP <= 0)
+                Hit(CurrentTarget, TimePassed);
+            }
+        }
+
+        private void Hit(Unit target, int TimePassed)
+        {
+            if (Vector3.Distance(OwnerUnit.position, target.position) < OwnerUnit.Type.Stats.AttackRange)
+            {
+                if (timer_Hitting > OwnerUnit.Type.Stats.AttackDelay)
                 {
-                    unit.onkill(target);
-                    target.Death(unit);
+                    timer_Hitting = 0;
+                    target.CurrentHP -= OwnerUnit.Type.Stats.Damage;
+                    if (target.CurrentHP <= 0)
+                    {
+                        target.Death();
+                        CurrentTarget = null;
+                        OwnerUnit.OnKilled(target);
+                    }
+                }
+                else
+                {
+                    timer_Hitting += TimePassed / 1000; 
                 }
             }
             else
             {
-                timer_Hitting += Time.deltaTime;
+                timer_Hitting = 0;
             }
-        }
-        else
-        {
-            timer_Hitting = 0;
         }
     }
 }

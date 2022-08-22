@@ -2,23 +2,27 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.AI;
 using System.IO;
+using Types;
+
 namespace ClientSideLogic
 {
 
     public class ClientGameController : MonoBehaviour
     {
-
         [HideInInspector]
         public static ClientGameController Singleton;
-        
+        public DatabaseClientVersion dataBase;
 
-        
+        public GameObject category_NormalUnits;
+        public GameObject category_Trees;
+
+        public float ClientUnitSpeedModificator = 1.5f;
+
+
         public GameObject prefab_State;
-
-        public List<StateClientSide> States = new List<StateClientSide>();
-
         [Header("Other")]
         public Vector3 MapCenter = new Vector3(0, 0, 0);
         public int testradius = 10;
@@ -28,6 +32,7 @@ namespace ClientSideLogic
         private void Awake()
         {
             Singleton = this;
+            dataBase = new DatabaseClientVersion();
         }
         private void Start()
         {
@@ -41,6 +46,7 @@ namespace ClientSideLogic
         {
             if (IsInitialized == false)
             {
+                ClientStateController.StartReCheckingStates();
                 IsInitialized = true;
             }
             else
@@ -55,7 +61,11 @@ namespace ClientSideLogic
         {
             if (Input.GetKeyDown(KeyCode.M))
             {
-                UIPlayerActions.LocalPlayer.OrderUnitToMoveServerRpc(ClientUnitController.AllUnits[0].ID, ClientUnitController.AllUnits[0].transform.position + new Vector3(10, 0, 0));
+                UIPlayerActions.LocalPlayer.OrderUnitToMoveServerRpc(dataBase.AllUnits[202].ID, dataBase.AllUnits[0].transform.position + new Vector3(10, 0, 0));
+            }
+            if (Input.GetKeyDown(KeyCode.L))
+            {
+                Debug.Log(SceneManager.GetActiveScene().GetRootGameObjects().Length);
             }
         }
 

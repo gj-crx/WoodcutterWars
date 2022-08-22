@@ -2,42 +2,59 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Map
+namespace ServerSideLogic
 {
-    public Vector3 StartingPosition = new Vector3(50, 0, 50);
-    public int MapSizeX = 500;
-    public int MapSizeY = 500;
-    public bool[,] ObstaclesMap;
-
-    
-
-    public void SetupMap()
+    public class Map
     {
-        ObstaclesMap = new bool[MapSizeX, MapSizeY];
+        public Vector3 StartingPosition = new Vector3(50, 0, 50);
+        public Vector3 CenterOfTheMap;
+        public int MapSizeX = 500;
+        public int MapSizeY = 500;
+        public bool[,] ObstaclesMap;
 
-    }
-    public void ApplyObstacle(Unit Obstacle, bool RadiusType = false)
-    {
-        if (RadiusType)
+
+        public Map()
         {
-            for (int y =  -Obstacle.CollisionRadius; y <= Obstacle.CollisionRadius; y++)
+            ObstaclesMap = new bool[MapSizeX + (int)StartingPosition.x + 100, MapSizeY + (int)StartingPosition.z + 100];
+            CenterOfTheMap = StartingPosition + new Vector3(MapSizeX / 2, 1, MapSizeY / 2);
+
+            CreateMapBorders();
+        }
+
+        private void CreateMapBorders()
+        {
+            //generating invisible map borders
+            for (int x = 0; x <= MapSizeX; x++)
             {
-                for (int x = -Obstacle.CollisionRadius; x <= Obstacle.CollisionRadius; x++)
+                for (int WallWidth = 0; WallWidth < 2; WallWidth++)
                 {
-                      ObstaclesMap[(int)Obstacle.position.x + x, (int)Obstacle.position.z + y] = true;
+                    ObstaclesMap[x, WallWidth] = true;
+                    ObstaclesMap[x, MapSizeY + WallWidth] = true;
+                }
+            }
+
+            for (int y = 0; y <= MapSizeY; y++)
+            {
+                for (int WallWidth = 0; WallWidth < 2; WallWidth++)
+                {
+                    ObstaclesMap[WallWidth, y] = true;
+                    ObstaclesMap[MapSizeX + WallWidth, y] = true;
                 }
             }
         }
-        else
+        public void ApplyObstacle(Unit Obstacle)
         {
-            for (int y = 0; y < Obstacle.CollisionRadius; y++)
-            {
-                for (int x = 0; x < Obstacle.CollisionRadius; x++)
+            if (Obstacle.Type.Stats.ObstacleRadius == 0) return;
+            for (int y = -Obstacle.Type.Stats.ObstacleRadius; y <= Obstacle.Type.Stats.ObstacleRadius; y++)
+                for (int x = -Obstacle.Type.Stats.ObstacleRadius; x <= Obstacle.Type.Stats.ObstacleRadius; x++)
                 {
-                      ObstaclesMap[(int)Obstacle.position.x + x, (int)Obstacle.position.z + y] = true;
+                    ObstaclesMap[(int)Obstacle.position.x + x, (int)Obstacle.position.z + y] = true;
+                    // Debug.Log(Obstacle.position.x + x + " " + Obstacle.position.z + y + " is obstacle by " + Obstacle.UnitName);
                 }
-            }
         }
+
+
+
+
     }
-    
 }

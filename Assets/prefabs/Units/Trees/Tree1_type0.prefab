@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 7238891810188723238}
   - component: {fileID: 7238891810189828976}
   - component: {fileID: 8779558220782510407}
-  - component: {fileID: -6570405120122367381}
   - component: {fileID: 7667736371487270193}
   m_Layer: 0
   m_Name: Tree1_type0
@@ -51,13 +50,13 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7238891810192045650}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
@@ -97,39 +96,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ab0120e8f9689a469907b18037f1414, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  a_MaxHP: 100
-  a_Damage: 10
-  a_Regeneration: 1
-  a_MoveSpeed: 3
-  a_AttackDelay: 0.5
-  a_AttackRange: 2.5
-  a_ResourcesCarriedMaximum: 20
-  a_ResourcesGivenOnKilled:
-  - 20
-  - 0
-  - 0
   currentHP: 100
-  ResourcesCarried:
+  a_ResourcesCarried:
+  - 0
   - 0
   - 0
   - 0
   ID: -1
---- !u!114 &-6570405120122367381
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7238891810192045650}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 0
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
+  ArmyID: 0
+  CurrentTargetID: -1
+  StateID: -1
+  LatestPosition: {x: 0, y: 0, z: 0}
+  RotationSpeed: 5
 --- !u!114 &7667736371487270193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,23 +120,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0868123f3875c849bf5e86caa849df2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UnitClass: 2
   UnitTypeID: 0
-  UnitClassID: 2
+  RaceRelated: 0
+  UnitTag: Generic
   UnitTypeName: Tree0
-  TrainingTimeNeeded: 10
-  ResourcesCostToTrain:
-  - 0
-  - 0
-  - 0
-  MaxHP: 100
-  Damage: 0
-  Regeneration: 0
-  MoveSpeed: 0
-  AttackDelay: 0
-  AttackRange: 0
-  ObstacleRadius: 1
-  ResourcesCarriedMaximum: 0
-  ResourcesGivenOnKilled:
-  - 20
-  - 0
-  - 0
+  Stats:
+    MaxHP: 50
+    Damage: 0
+    Regeneration: 0
+    MoveSpeed: 0
+    AttackDelay: 0
+    AttackRange: 0
+    TrainTimeNeeded: 10
+    ResourcesCostToBuild:
+    - 50
+    - 0
+    - 0
+    - 0
+    ResourcesCarriedMaximum: 0
+    ResourcesGivenOnKilled:
+    - 10
+    - 0
+    - 0
+    - 0
+    ObstacleRadius: 1

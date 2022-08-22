@@ -60,6 +60,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49bb328f9b148794eb1cf4e9c51517c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  StateID: 0
+  RaceID: 0
+  StateName: Unsyncronized state
+  ControllingPlayerID: 0
   ResourcesAmount:
   - 0
   - 0

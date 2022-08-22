@@ -1,134 +1,63 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Types;
+using ServerSideLogic;
 
 namespace ClientSideLogic
 {
-
     public static class ClientUnitController
     {
-        [Header("All game objects")]
-        public static List<UnitClientSide> AllUnits = new List<UnitClientSide>();
-        public static List<UnitClientSide> trees = new List<UnitClientSide>();
-        public static List<UnitClientSide> units = new List<UnitClientSide>();
-        public static List<UnitClientSide> buildings = new List<UnitClientSide>();
-
-
-
-        /// <summary>
-        /// 0 - tree, 1 - regular unit, 2 - building; Function returns ID in units pool
-        /// </summary>
-        public static int AddUnitToList(UnitClientSide g, int UnitType = 0)
-        {
-            AllUnits.Add(g);
-            if (UnitType == 0)
-            {
-                //add sharding system
-                trees.Add(g);
-                return trees.IndexOf(g);
-            }
-            if (UnitType == 1)
-            {
-                units.Add(g);
-                return units.IndexOf(g);
-            }
-            if (UnitType == 2)
-            {
-                buildings.Add(g);
-                return buildings.IndexOf(g);
-            }
-            return 0;
-        }
-
-
-        public static void RemoveUnitFromList(UnitClientSide g, int UnitType = 0)
-        {
-            if (UnitType == 0)
-            {
-                //add sharding system
-                trees.Remove(g);
-            }
-            if (UnitType == 1)
-            {
-                units.Remove(g);
-            }
-            if (UnitType == 2)
-            {
-                buildings.Remove(g);
-            }
-        }
-
-        private static bool ListContainsUnit(int UnitObjectID, List<UnitClientSide> list)
-        {
-            foreach (var unit in list)
-            {
-                if (unit.ID == UnitObjectID)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
         public static bool UnitExistInClient(int UnitObjectID)
         {
-            if (ListContainsUnit(UnitObjectID, units) || ListContainsUnit(UnitObjectID, buildings) || ListContainsUnit(UnitObjectID, trees))
+            try
             {
-                return true;
+                return ClientGameController.Singleton.dataBase.AllUnits[UnitObjectID] != null;
             }
-            else return false;
+            catch
+            {
+                return false;
+            }
         }
-        private static UnitClientSide TryToFindUnitInList(int UnitObjectID, List<UnitClientSide> list)
-        {
-            foreach (var unit in list)
-            {
-                if (unit.ID == UnitObjectID)
-                {
-                    return unit;
-                }
-            }
-            return null;
-        }
-        public static UnitClientSide FindUnitByID(int UnitObjectID)
-        {
-            UnitClientSide UnitToFind = TryToFindUnitInList(UnitObjectID, units);
-            if (UnitToFind != null)
-            {
-                return UnitToFind;
-            }
-            UnitToFind = TryToFindUnitInList(UnitObjectID, buildings);
-            if (UnitToFind != null)
-            {
-                return UnitToFind;
-            }
-            UnitToFind = TryToFindUnitInList(UnitObjectID, trees);
-            if (UnitToFind != null)
-            {
-                return UnitToFind;
-            }
-            return null;
-        }
-        public static GameObject GetUnitPrefab(sbyte UnitTypeID, sbyte UnitClassID)
+
+        public static GameObject GetUnitPrefab(int UnitTypeID)
         {
             return PrefabManager.Singleton.prefabs_AllUnits[UnitTypeID];
-            if (UnitClassID == 0)
-            {
-                return PrefabManager.Singleton.prefabs_Units[UnitTypeID];
-            }
-            if (UnitClassID == 1)
-            {
-                return PrefabManager.Singleton.prefabs_Buildings[UnitTypeID];
-            }
-            if (UnitClassID == 2)
-            {
-                return PrefabManager.Singleton.prefabs_Trees[UnitTypeID];
-            }
-            return null;
         }
 
         public static UnitClientSide CreateUnitRepresentation(Unit.UnitSerializableData data)
         {
-            UnitClientSide NewUnit = GameObject.Instantiate(GetUnitPrefab(data.UnitTypeID, data.UnitClassID), data.position, Quaternion.identity).GetComponent<UnitClientSide>();
+            UnitClientSide NewUnit = GameObject.Instantiate(GetUnitPrefab(data.UnitTypeID), data.position, Quaternion.identity).GetComponent<UnitClientSide>();
+            NewUnit.ID = data.UnitObjectID;
+            NewUnit._type = TypesData.AllUnitTypes[data.UnitTypeID];
             NewUnit.ApplyRecievedData(data);
+            ClientGameController.Singleton.dataBase.AddToAllUnits(NewUnit);
+            //Add building to it's state
+            if (TypesData.AllUnitTypes[data.UnitTypeID].Class == Unit.UnitClass.Building && data.StateID != -1 && ClientGameController.Singleton.dataBase.States[data.StateID] != null)
+            {
+                ClientGameController.Singleton.dataBase.States[data.StateID].Buildings.Add(NewUnit.GetComponent<BuildingClientSide>());
+            }
+
+            //adding to the state
+            NewUnit.StateID = data.StateID;
+            if (data.StateID > -1)
+            {
+                if (NewUnit._type.Class != Unit.UnitClass.Building && ClientGameController.Singleton.dataBase.States[data.StateID])
+                {
+                    ClientGameController.Singleton.dataBase.States[NewUnit.StateID].MainArmy.Add(NewUnit);
+                }
+            }
+
+            //adding to in-client category
+            if (NewUnit._type.Class == Unit.UnitClass.Tree)
+            {
+                NewUnit.transform.SetParent(ClientGameController.Singleton.category_Trees.transform);
+            }
+            else
+            {
+                NewUnit.transform.SetParent(ClientGameController.Singleton.category_NormalUnits.transform);
+            }
+
             return NewUnit;
         }
     }

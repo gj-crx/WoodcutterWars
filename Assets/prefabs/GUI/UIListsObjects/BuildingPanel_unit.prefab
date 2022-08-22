@@ -1884,7 +1884,7 @@ GameObject:
   - component: {fileID: 7520724470611978211}
   - component: {fileID: 7520724470611978210}
   - component: {fileID: 7520724470611978209}
-  - component: {fileID: 7466086447047587917}
+  - component: {fileID: 7875966674852916878}
   m_Layer: 5
   m_Name: IconAndName
   m_TagString: Untagged
@@ -1996,8 +1996,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 7466086447047587917}
-        m_TargetAssemblyTypeName: UIElement, GUI
+      - m_Target: {fileID: 7875966674852916878}
+        m_TargetAssemblyTypeName: ClientSideLogic.UI.Buttons.Button_BuildOrderClicked,
+          Assembly-CSharp
         m_MethodName: BuildOrderButtonClicked
         m_Mode: 1
         m_Arguments:
@@ -2008,7 +2009,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &7466086447047587917
+--- !u!114 &7875966674852916878
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2017,7 +2018,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7520724470611978215}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ffdec50b4f01b2742bf4d9cf7b005798, type: 3}
+  m_Script: {fileID: 11500000, guid: 57578b8dd800da647be47d0356c6ee52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ID: 0

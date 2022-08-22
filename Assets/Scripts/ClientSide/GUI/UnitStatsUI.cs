@@ -9,31 +9,31 @@ namespace ClientSideLogic
 
     public class UnitStatsUI
     {
-        private BasicUnitType UnitType;
+        private UnitType UnitType;
 
         public void FormUnitStatsUI(Transform panel)
         {
             //damage
             Text t = panel.Find("UnitDamage").Find("Text").GetComponent<Text>();
-            t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.Damage;
+            t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.Stats.Damage;
             //HP
             t = panel.Find("UnitHP").Find("Text").GetComponent<Text>();
-            t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.MaxHP;
+            t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.Stats.MaxHP;
             //Resource costs
-            for (int i = 0; i < UnitType.ResourcesCostToBuild.Length; i++)
+            for (int i = 0; i < UnitType.Stats.ResourcesCostToBuild.Length; i++)
             {
                 t = panel.Find("ResourcesCost" + i).Find("Text").GetComponent<Text>();
-                t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.ResourcesCostToBuild[i];
+                t.text = UITextFormatter.CutOffNumericalPart(t.text) + UnitType.Stats.ResourcesCostToBuild[i];
             }
 
         }
-        public UnitStatsUI(BasicUnitType unitType)
+        public UnitStatsUI(UnitType unitType)
         {
             UnitType = unitType;
         }
         public UnitStatsUI(UnitClientSide unit)
         {
-            UnitType = unit.type;
+            UnitType = unit._type;
         }
     }
 }

@@ -44,6 +44,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GameID: 0
+  TimeMSConstante: 0.2
   testobj1: {fileID: 0}
   testobj2: {fileID: 0}
   TestWay: []
+  DebugMode: 1

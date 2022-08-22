@@ -1,95 +1,128 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Types;
+using System.Threading.Tasks;
+using System.Threading;
 
-public class Worker
+namespace ServerSideLogic.Behaviors
 {
-    
-    public float AI_DecisionSpeed = 10;
-
-    private Fighting fighting;
-    private Unit unit;
-
-    private bool InventoryFull = false;
-    private float MaximumTreeSearchingDistance = 75;
-    private float timer_AIDecisions = 5;
-
-
-    void Update()
+    public class Worker : IBehavior
     {
-        if (InventoryFull == false)
-        {
-            GatherTrees();
-        }
-        else
-        {
-            ReturnResources();
-        }
-    }
-    
-    private void OnUnitKill(Unit victim = null)
-    {
-        Debug.Log("Lumber gathered");
-        for (int i = 0; i < unit.ResourcesCarried.Length; i++)
-        {
-            if (unit.ResourcesCarried[i] == unit.ResourcesCarriedMaximum)
+
+
+        private Fighting fighting;
+        private Unit unit;
+
+        private bool InventoryFull = false;
+        private float MaximumTreeSearchingDistance = 75;
+
+        public bool Active { get; set; } = true;
+        public bool HaveOrder { get; set; } = false;
+
+        public int CurrentTargetID 
+        {   get 
             {
-                InventoryFull = true;
-                timer_AIDecisions = AI_DecisionSpeed;
+                if (fighting.CurrentTarget != null) return fighting.CurrentTarget.ID;
+                else return -1;
+            }
+            set
+            {
+                fighting.CurrentTarget = null;
             }
         }
-    }
-    private Unit FindNearestTree()
-    {
-        return UnitLogic.FindNearestObject(unit.position, unit.game.unitsController.Trees, MaximumTreeSearchingDistance);
-    }
-    private void TransferResources(Unit target, float TransferingDistance = 4.5f)
-    {
-        if (Vector3.Distance(unit.position, target.position) < TransferingDistance)
+
+        public Worker(Unit unit, Fighting fighting)
+        {
+            this.unit = unit;
+            this.fighting = fighting;
+
+        }
+
+        public async Task StartIterations(int ActualDelay, int RandomizedPreDelay = 0)
+        {
+            await Task.Delay(RandomizedPreDelay);
+            while (unit.game.StillRunning)
+            {
+                Actions(ActualDelay);
+                await Task.Delay(ActualDelay);
+            }
+        }
+        private void Actions(int DelayedTime)
+        {
+            if (HaveOrder == false)
+            {
+                if (InventoryFull == false)
+                {
+                    GatherTrees();
+                    fighting.FightingControlling(DelayedTime);
+                }
+                else
+                {
+                    ReturnResources();
+                }
+            }
+        }
+
+        public void OnUnitKillDelegated(Unit victim = null)
         {
             for (int i = 0; i < unit.ResourcesCarried.Length; i++)
             {
-                unit.state.ResourcesAmount[i] += unit.ResourcesCarried[i];
-                unit.ResourcesCarried[i] = 0;
+                //  Debug.Log(unit.ResourcesCarried.Length + " " + i + " " + TypesData.AllUnitTypes[victim.UnitTypeID].ResourcesGivenOnKilled.Length);
+                unit.ResourcesCarried[i] += victim.Type.Stats.ResourcesGivenOnKilled[i];
+                if (unit.ResourcesCarried[i] >= unit.Type.Stats.ResourcesCarriedMaximum)
+                {
+                    InventoryFull = true;
+                    unit.ResourcesCarried[i] = unit.Type.Stats.ResourcesCarriedMaximum;
+                }
             }
-            InventoryFull = false;
         }
-    }
-    public void GatherTrees()
-    {
-        if (timer_AIDecisions > AI_DecisionSpeed)
+        private Unit FindNearestTree()
         {
-            timer_AIDecisions = 0;
+            return UnitLogic.FindNearestObject(unit.position, unit.game.DB.Trees, MaximumTreeSearchingDistance);
+        }
+        private void TransferResources(Unit target, float TransferingDistance = 4.5f)
+        {
+            if (Vector3.Distance(unit.position, target.position) < TransferingDistance)
+            {
+                for (int i = 0; i < unit.ResourcesCarried.Length; i++)
+                {
+                    unit.state.ResourcesAmount[i] += unit.ResourcesCarried[i];
+                    unit.ResourcesCarried[i] = 0;
+                }
+                InventoryFull = false;
+                Actions(250);
+            }
+        }
+        private void GatherTrees()
+        {
             Unit tree = FindNearestTree();
             if (tree != null)
             {
-                if (unit.game.pf.GetWayPath(unit, tree.position))
+                if (unit.GetWayTarget(tree.PositionNextToUnit(unit.position)))
                 {
-
+                    fighting.CurrentTarget = tree;
                 }
-                fighting.CurrentTarget = tree;
+
             }
             else
             { //roaming
-
+                Debug.Log("no trees");
             }
         }
-        else
+        private void ReturnResources()
         {
-            timer_AIDecisions += Time.deltaTime;
-        }
-    }
-    public void ReturnResources()
-    {
-        if (timer_AIDecisions > AI_DecisionSpeed)
-        {
-            timer_AIDecisions = 0;
-            unit.game.pf.GetWayPath(unit, unit.state.Townhall.position);
+            unit.game.pf.GetWayPath(unit, unit.state.Townhall.PositionNextToUnit(unit.position), 3);
             TransferResources(unit.state.Townhall);
         }
-        else
+        public void Clear()
         {
-            timer_AIDecisions += Time.deltaTime;
+            unit = null;
+        }
+
+        public void BehaviorAction()
+        {
+            Actions(250);
         }
     }
 }

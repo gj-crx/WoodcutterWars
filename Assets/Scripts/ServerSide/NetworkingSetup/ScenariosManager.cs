@@ -1,49 +1,81 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Matchmaking;
+using ServerSideLogic.Matchmaking;
+using Types;
 
-public static class ScenariosManager
+namespace ServerSideLogic
 {
-    public static List<Vector3> PlayersStartingPositions = new List<Vector3>();
-    
-
-    private static Vector3[] GetPlayersStartingPositions(int PlayersCount)
+    public static class ScenariosManager
     {
-        Vector3[] positions = new Vector3[PlayersCount];
+        public static IScenario StandartScenario = new BasicScenario();
+        public static IScenario CurrentTestingScenario = new UnitsTestingScenario();
 
-
-        return positions;
-    }
-    private static void CreatePlayerBase(Game GameToCreate, Player player, Vector3 PositionToSpawn, sbyte RaceID)
-    {
-        State PlayerState = new State(GameToCreate, RaceID, PositionToSpawn, player.PlayerID);
-        GameNetCoordinator.Singleton.SyncStateClientRpc(new State.StateSerializableData(PlayerState));
-    }
-    private static void SpawnPlayerStartingBases()
-    {
-
-    }
-    public static void BasicLobbyStart(GameLobby LobbyToStart)
-    {
-        //Generate map
-        MapGenerator.GenerateTrees(LobbyToStart.GameRunningInLobby, LobbyToStart.type.StartingTreesAmount);
-
-        //Create players starting bases
-        int Counter = 0;
-        foreach (var Player in LobbyToStart.Players)
+        private static Vector3[] GetPlayersStartingPositions(int PlayersCount, int MapSizeRadius, Vector3 MapCenter)
         {
-            Vector3[] PlayersPositions = GetPlayersStartingPositions(LobbyToStart.Players.Count);
-            CreatePlayerBase(LobbyToStart.GameRunningInLobby, Player.PlayerIntentsObject, PlayersStartingPositions[Counter], Player.SelectedRace);
-            Counter++;
+            Vector3[] positions = new Vector3[PlayersCount];
+            float AngleStep = 360 / PlayersCount;
+            for (int i = 0; i < PlayersCount; i++)
+            {
+                float angle = AngleStep * i;
+                Vector3 Direction = new Vector3(0, Mathf.Sin(Mathf.Deg2Rad * angle), Mathf.Cos(Mathf.Deg2Rad * angle));
+                positions[i] = MapCenter + (Direction * MapSizeRadius) + new Vector3(0, 1, 0);
+            }
+            return positions;
         }
-    }
-    public static void TestingScenarioStart()
-    {
-        //create some units
-        Game NewGame = GameNetCoordinator.Singleton.GetGameByID(0);
-        MapGenerator.GenerateTrees(NewGame, 200);
-        new Unit(NewGame, new Vector3(85, 1, 135), null, 0);
-        new Unit(NewGame, new Vector3(82, 1, 140), null, 0);
+        private static void CreatePlayerBase(Game GameToCreate, Player player, Vector3 PositionToSpawn, byte RaceID)
+        {
+            State PlayerState = new State(GameToCreate, RaceID, PositionToSpawn, player);
+
+        }
+        private static void CreateAIBase(Game GameToCreate, Vector3 PositionToSpawn, byte RaceID)
+        {
+            State AIState = new State(GameToCreate, RaceID, PositionToSpawn, null, "AI state", true);
+        }
+        private static void SpawnStartingBases(GameLobby LobbyToStart)
+        {
+            byte AIsCountInLobby = LobbyManager.LobbyTypes[LobbyToStart.LobbyTypeID].AIPlayersCount;
+            Debug.Log("ai players count " + AIsCountInLobby);
+            Vector3[] PlayersPositions = GetPlayersStartingPositions(LobbyToStart.Players.Count + AIsCountInLobby, LobbyToStart.GameRunningInLobby.map.MapSizeX / 4, LobbyToStart.GameRunningInLobby.map.CenterOfTheMap);
+            int Counter = 0;
+            foreach (var Player in LobbyToStart.Players)
+            {
+                CreatePlayerBase(LobbyToStart.GameRunningInLobby, Player.PlayerIntentsObject, PlayersPositions[Counter], Player.SelectedRace);
+                Counter++;
+            }
+            //Spawning AIs
+            for (byte i = 0; i < AIsCountInLobby; i++)
+            {
+                Debug.Log("spawning ai in position " + PlayersPositions[LobbyToStart.Players.Count + i]);
+                CreateAIBase(LobbyToStart.GameRunningInLobby, PlayersPositions[LobbyToStart.Players.Count + i], 0);
+            }
+        }
+
+        private class BasicScenario : IScenario
+        {
+            public void StartScenario(GameLobby LobbyToStart)
+            {
+                Debug.Log("Scenario of lobby type " + LobbyToStart.LobbyTypeID + " is started");
+                //Generate map
+                MapGenerator.GenerateTrees(LobbyToStart.GameRunningInLobby, LobbyManager.LobbyTypes[LobbyToStart.LobbyTypeID].StartingTreesAmount);
+                //Create players starting bases
+                Debug.Log("starting trees spawned");
+                SpawnStartingBases(LobbyToStart);
+                Debug.Log("bases spawned");
+
+
+            }
+        }
+        private class UnitsTestingScenario : IScenario
+        {
+            public void StartScenario(GameLobby LobbyToStart)
+            {
+                Unit u1 = new Unit(LobbyToStart.GameRunningInLobby, LobbyToStart.GameRunningInLobby.map.CenterOfTheMap + new Vector3(15, 1, 0), null, (byte)0);
+                u1.Type.Stats.MoveSpeed = 3;
+                u1.GetWayTarget(u1.position + new Vector3(15, 0, 0));
+                Testing.TestingController.TestUnitsMovement(u1.position + new Vector3(15, 0, 0), u1);
+
+            }
+        }
     }
 }
